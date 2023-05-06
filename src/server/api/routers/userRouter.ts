@@ -1,12 +1,8 @@
-import { PrismaClientKnownRequestError } from "@prisma/client/runtime";
+import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 
 import * as trpc from "@trpc/server";
 import { z } from "zod";
-import {
-  createTRPCRouter,
-  publicProcedure,
-  protectedProcedure,
-} from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 
 // need to import the type from our prisma model
 
@@ -15,7 +11,14 @@ const createUserSchema = z.object({
   email: z.string().email(),
 });
 
-type createUserInput = z.TypeOf<typeof createUserSchema>;
+export type createUserInput = z.TypeOf<typeof createUserSchema>;
+
+const requestOtpSchema = z.object({
+  email: z.string().email(),
+  redirect: z.string().default("/"),
+});
+
+export type requestOtpSchema = z.TypeOf<typeof requestOtpSchema>;
 
 export const userRouter = createTRPCRouter({
   registerUser: publicProcedure
@@ -48,5 +51,41 @@ export const userRouter = createTRPCRouter({
           });
         }
       }
+    }),
+
+  requestOtp: publicProcedure
+    .input(requestOtpSchema)
+    .mutation(({ input, ctx }) => {
+      const { email, redirect } = input;
+
+      const user = ctx.prisma.user.findUnique({
+        where: {
+          email,
+        },
+      });
+
+      if (!user) {
+        throw new trpc.TRPCError({
+          code: "NOT_FOUND",
+          message: "User not found",
+        });
+      }
+
+      // create logintoken
+      const token = ctx.prisma.loginToken.create({
+        data: {
+          redirect,
+          // connect the user with the logintoken
+          user: {
+            connect: {
+              id: user.id,
+            },
+          },
+        },
+      });
+
+      // send email to user
+
+      return true;
     }),
 });
