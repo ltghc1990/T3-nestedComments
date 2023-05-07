@@ -3,7 +3,12 @@ import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 import * as trpc from "@trpc/server";
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { sendLoginEmail } from "~/utils/mailer";
 
+import { getBaseUrl } from "~/utils/api";
+import { encode } from "~/utils/base64";
+
+const url = getBaseUrl();
 // need to import the type from our prisma model
 
 const createUserSchema = z.object({
@@ -85,6 +90,11 @@ export const userRouter = createTRPCRouter({
       });
 
       // send email to user
+      sendLoginEmail({
+        email: email,
+        url: url,
+        token: encode(`${token.id}:${user.email}`),
+      });
 
       return true;
     }),

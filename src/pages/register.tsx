@@ -20,17 +20,23 @@ const RegisterPage = () => {
   };
   return (
     <div className="flex flex-col">
-      <h1 className=" my-4 text-xl font-semibold text-slate-800">Register</h1>
+      <h1 className=" my-4 text-xl font-semibold text-slate-800 ">Register</h1>
       <form className="flex flex-col" onSubmit={handleSubmit(onSubmit)}>
         {error && error.message}
         <input
+          className="styled-input px-2"
           type="email"
           placeholder="jane.doe@example.com"
           {...register("email")}
         />
-        <input type="text" placeholder="Tom" {...register("name")} />
-        <div>
-          <button className=" inline-block" type="submit">
+        <input
+          className="styled-input mt-4 px-2"
+          type="text"
+          placeholder="Tom"
+          {...register("name")}
+        />
+        <div className="mt-4">
+          <button className="btn" type="submit">
             Register
           </button>
         </div>

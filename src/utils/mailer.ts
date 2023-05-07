@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+
 export async function sendLoginEmail({
   email,
   url,
@@ -11,7 +12,7 @@ export async function sendLoginEmail({
   const testAccount = await nodemailer.createTestAccount();
 
   const transporter = nodemailer.createTransport({
-    host: "smtp.ethernal.email",
+    host: "smtp.ethereal.email",
     port: 587,
     secure: false,
     auth: {
@@ -24,7 +25,7 @@ export async function sendLoginEmail({
     from: `"jane doe" <join.doe@exampleRouter.com>`,
     to: email,
     subject: "login to your account",
-    html: `Login by clicking here <a href="${url}/login#token=${token}"`,
+    html: `Login by clicking <a href="${url}/login#token=${token}">HERE</a>`,
   });
 
   console.log("preview URL:", nodemailer.getTestMessageUrl);
