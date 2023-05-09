@@ -98,4 +98,28 @@ export const userRouter = createTRPCRouter({
 
       return true;
     }),
+
+  loginUser: publicProcedure
+    .input(
+      z.object({
+        email: z.string().email(),
+      })
+    )
+    .query(({ input, ctx }) => {
+      const { email } = input;
+      const user = ctx.prisma.user.findUnique({
+        where: {
+          email,
+        },
+      });
+
+      if (!user) {
+        throw new trpc.TRPCError({
+          code: "NOT_FOUND",
+          message: "User not found",
+        });
+      }
+
+      return user;
+    }),
 });

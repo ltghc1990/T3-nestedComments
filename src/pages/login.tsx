@@ -10,21 +10,17 @@ const RegisterPage = () => {
   const [success, setSuccess] = useState(false);
   const { handleSubmit, register } = useForm<createUserInput>();
 
-  const { mutate, error } = api.user.requestOtp.useMutation({
-    onSuccess: () => {
-      setSuccess(true);
-    },
-  });
+  // const { data, error } = api.user.loginUser.useQuery({
+  //   email: "ltgdrgn@gmail.com",
+  // });
 
-  const onSubmit = (values: createUserInput) => {
-    mutate(values);
-  };
+  const onSubmit = (values: createUserInput) => {};
   return (
     <div>
       <h1 className=" styled my-4 text-xl font-semibold text-slate-800">
         Login
       </h1>
-      <form className="flex flex-col" onSubmit={handleSubmit(onSubmit)}>
+      {/* <form className="flex flex-col" onSubmit={handleSubmit(onSubmit)}>
         {error && error.message}
         {success && <p>Check your email</p>}
         <input
@@ -38,7 +34,7 @@ const RegisterPage = () => {
             Login
           </button>
         </div>
-      </form>
+      </form> */}
       <Link href="/register">register</Link>
     </div>
   );
