@@ -70,3 +70,9 @@ export const postRouter = createTRPCRouter({
       } catch (error) {}
     }),
 });
+
+// export const testRouter = createTRPCRouter({
+//   lol: publicProcedure.query(({ctx})=> {
+//     const posts = ctx.prisma.post.findMany()
+//   })
+// })

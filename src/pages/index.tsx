@@ -20,7 +20,3 @@ const Home: NextPage = () => {
 };
 
 export default Home;
-
-const PostList = () => {
-  return <></>;
-};
