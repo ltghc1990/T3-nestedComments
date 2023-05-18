@@ -1,4 +1,4 @@
-import React, { useMemo, type ReactNode } from "react";
+import React, { type ReactNode } from "react";
 
 export type Comment = {
   id: string;
@@ -12,14 +12,14 @@ export type Comment = {
 };
 
 type PostProps = {
-  id: string;
+  postId: string;
   body: string;
   title: string;
   comments: Comment[];
 };
-const Post = ({ id, ...post }: PostProps) => {
+const Post = ({ postId, ...post }: PostProps) => {
   return (
-    <div key={id}>
+    <div key={postId}>
       <h1 className="my-4 text-3xl font-bold text-gray-800">{post.title}</h1>
       <article>{post.body}</article>
     </div>

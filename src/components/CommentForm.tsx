@@ -9,7 +9,7 @@ const CommentForm = ({
   autoFocus = false,
   postId,
   parentId,
-}: MutationInput & { autoFocus: boolean }) => {
+}: MutationInput & { autoFocus: boolean; parentId?: string }) => {
   const [message, setMessage] = useState("");
   const isLoading = false;
   const error = "Error";
@@ -38,12 +38,13 @@ const CommentForm = ({
     const sally = "d1cf8add-3005-4719-9d7f-10de64f1ea1b";
 
     // try to set the error before it makes it to the server
+    console.log(parentId);
 
     mutate({
       message,
       userId: kyle,
       postId,
-      ...parentId,
+      parentId,
     });
     // the server can get the post id from url, but since we are using trpc only stuff we pass to the input gets thru..
   };

@@ -10,8 +10,6 @@ const PostId = () => {
 
   const postId = router.query?.postId ?? "";
 
-  console.log(postId);
-
   const {
     data: post,
     isLoading,
@@ -31,9 +29,9 @@ const PostId = () => {
     <>
       {post && (
         <>
-          <Post id={postId} {...post} />
+          <Post postId={postId} {...post} />
           <CommentForm postId={postId} />
-          <CommentsList id={postId} comments={post.comments} />
+          <CommentsList postId={postId} comments={post.comments} />
         </>
       )}
     </>
