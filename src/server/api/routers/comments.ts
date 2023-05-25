@@ -46,13 +46,12 @@ export const commentRouter = createTRPCRouter({
     .mutation(({ input, ctx }) => {
       const id = input;
       try {
-        const deleted = ctx.prisma.comment.delete({
+        return ctx.prisma.comment.delete({
           where: {
             id,
           },
+          select: { id: true },
         });
-
-        return deleted;
       } catch (error) {
         console.log(error);
       }
@@ -70,7 +69,6 @@ export const commentRouter = createTRPCRouter({
       // our auth data exist in ctx
       // get comment id find the comment and get userid
 
-       
       // const userId = ctx.prisma.comment.findUnique({
       //   where: {
       //     id: commentId,
@@ -92,6 +90,6 @@ export const commentRouter = createTRPCRouter({
         select: { message: true },
       });
 
-      return updatedComment
+      return updatedComment;
     }),
 });

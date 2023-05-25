@@ -138,6 +138,10 @@ const CommentItem = ({
       }
     }
   };
+
+  const utils = api.useContext();
+  const { mutate: deleteComment } = api.comment.deleteComment.useMutation();
+
   return (
     <>
       <div className="my-2 rounded-md border border-slate-300 sm:p-4 md:px-8">
@@ -154,6 +158,7 @@ const CommentItem = ({
               autoFocus={true}
               initialValue={message}
               closeForm={closeForm}
+              editing={id}
             />
           </>
         ) : (
@@ -174,7 +179,18 @@ const CommentItem = ({
             isActive={id === selectedCommentId && iconView === "edit"}
             onClick={() => handleIconClick("edit")}
           />
-          <IconBtn Icon={DeleteIcon} color="text-red-600" />
+          <IconBtn
+            Icon={DeleteIcon}
+            color="text-red-600"
+            onClick={() =>
+              deleteComment(id, {
+                onSuccess: (id) => {
+                  // find the id in local state and remove it.
+                  utils.post.invalidate();
+                },
+              })
+            }
+          />
         </div>
 
         {match && iconView === "reply" && (
@@ -206,6 +222,7 @@ const CommentItem = ({
                     postId={postId}
                     selectedCommentId={selectedCommentId}
                     handleReplyForm={handleReplyForm}
+                    closeForm={closeForm}
                   />
                 </div>
               );
