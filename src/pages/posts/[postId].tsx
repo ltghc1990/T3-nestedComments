@@ -18,7 +18,7 @@ const PostId = () => {
     { postId: postId as string },
     {
       onSuccess: (response) => {
-        // console.log(response);
+        console.log(response);
       },
       enabled: Boolean(postId !== undefined && postId !== ""),
     }

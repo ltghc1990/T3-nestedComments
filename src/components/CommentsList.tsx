@@ -1,6 +1,8 @@
 import React, { useMemo, useState } from "react";
 import { type Comment } from "./Post";
 
+import { api } from "~/utils/api";
+
 import CommentForm from "./CommentForm";
 import IconBtn from "./IconBtn";
 import { HeartIcon, EditIcon, DeleteIcon, ReplyIcon } from "./IconBtn";
@@ -21,13 +23,12 @@ const CommentsList = ({ postId, comments }: Props) => {
   // console.log(comments);
   // seperate the comments into 2 arrays. ones with parentids and ones without
 
+  const closeForm = () => setSelectedCommentId("");
+
   const handleReplyForm = (id: string) => {
-    if (id === selectedCommentId) {
-      setSelectedCommentId("");
-    } else {
-      setSelectedCommentId(id);
-    }
+    setSelectedCommentId(id);
   };
+
   const commentsById = useMemo(() => {
     if (comments === null) return [];
 
@@ -71,6 +72,7 @@ const CommentsList = ({ postId, comments }: Props) => {
                 postId={postId}
                 selectedCommentId={selectedCommentId}
                 handleReplyForm={handleReplyForm}
+                closeForm={closeForm}
               />
             </div>
           );
@@ -87,10 +89,10 @@ const dateFormatter = new Intl.DateTimeFormat(undefined, {
 });
 
 // super confusing but here goes....
-// CommentsList will first render root lv commentitems, then if there are nestedComments, it will call on itself.
+// CommentsList will first render root lv commentitems, then if there are nestedComments, commentItems  will call on itself.
 
 // for CommentForm
-// by replying to a comment, that comment dd becomes the parentId for the comment we are creating
+// by replying to a comment, that comment id becomes the parentId for the comment we are creating
 
 const CommentItem = ({
   id,
@@ -101,18 +103,41 @@ const CommentItem = ({
   postId,
   selectedCommentId,
   handleReplyForm,
+  closeForm,
 }: Comment & {
   getReplies: (id: string) => Comment[];
   postId: string;
   selectedCommentId: string;
   handleReplyForm: (id: string) => void;
+  closeForm: () => void;
 }) => {
   // getReplies can also return undefined.
   // see the comment has children to render
   const [showComments, setShowComments] = useState(false);
+  type IconView = "reply" | "edit" | "";
+  const [iconView, setIconView] = useState<IconView>("");
 
   const childComments = getReplies(id);
   // console.log(childComments);
+
+  const match: boolean = id === selectedCommentId;
+
+  const handleIconClick = (view: IconView) => {
+    // need to check id to see if we are clicking the same comment or another
+    if (!match) {
+      // clicking on another comment
+      handleReplyForm(id);
+      setIconView(view);
+    } else {
+      if (view === iconView) {
+        // same id same view means we want to close the form
+        setIconView("");
+      } else {
+        // same id, diff view, means we want change view
+        setIconView(view);
+      }
+    }
+  };
   return (
     <>
       <div className="my-2 rounded-md border border-slate-300 sm:p-4 md:px-8">
@@ -120,29 +145,47 @@ const CommentItem = ({
           <span className="font-semibold capitalize">{user.name}</span>
           <span>{dateFormatter.format(createdAt)}</span>
         </div>
-        <div>{message}</div>
+        {match && iconView === "edit" ? (
+          <>
+            <p>edit: </p>
+
+            <CommentForm
+              postId={postId}
+              autoFocus={true}
+              initialValue={message}
+              closeForm={closeForm}
+            />
+          </>
+        ) : (
+          <div>{message}</div>
+        )}
+
         <div className="mt-4 flex gap-4 text-sky-600">
           <IconBtn Icon={HeartIcon} aria-label="Like">
             2
           </IconBtn>
-          <IconBtn Icon={ReplyIcon} onClick={() => handleReplyForm(id)} />
-          <IconBtn Icon={EditIcon} />
+          <IconBtn
+            Icon={ReplyIcon}
+            isActive={id === selectedCommentId && iconView === "reply"}
+            onClick={() => handleIconClick("reply")}
+          />
+          <IconBtn
+            Icon={EditIcon}
+            isActive={id === selectedCommentId && iconView === "edit"}
+            onClick={() => handleIconClick("edit")}
+          />
           <IconBtn Icon={DeleteIcon} color="text-red-600" />
         </div>
 
-        {selectedCommentId === id && (
-          <CommentForm postId={postId} autoFocus={true} parentId={id} />
+        {match && iconView === "reply" && (
+          <CommentForm
+            postId={postId}
+            autoFocus={true}
+            parentId={id}
+            closeForm={closeForm}
+          />
         )}
       </div>
-      {/* {childComments &&
-        childComments.map((item, index) => {
- 
-          return (
-            <div key={item.id} className={`ml-[${(index + 1) * 10}px]`}>
-              <CommentItem {...item} getReplies={getReplies} />
-            </div>
-          );
-        })} */}
       {childComments && (
         <>
           <div className={`${showComments ? "block" : "hidden"} `}>

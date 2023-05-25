@@ -1,7 +1,11 @@
-import React, { ReactNode } from "react";
+import React, { type ReactNode, MouseEventHandler } from "react";
 
 type Props = {
+  isActive: boolean;
   children: ReactNode;
+  Icon: () => React.JSX.Element;
+  onClick: MouseEventHandler<HTMLButtonElement>;
+  color: string;
 };
 
 const IconBtn = ({
@@ -9,10 +13,13 @@ const IconBtn = ({
   isActive = false,
   color = "",
   children,
-  ...props
-}) => {
+  onClick,
+}: Props) => {
   return (
-    <button className={`flex ${isActive ? "" : ""} ${color}`} {...props}>
+    <button
+      className={`flex ${isActive ? "text-sky-900" : ""} ${color}`}
+      onClick={onClick}
+    >
       <span className={`${children != null ? "mr-1" : ""}`}>
         <Icon />
       </span>
