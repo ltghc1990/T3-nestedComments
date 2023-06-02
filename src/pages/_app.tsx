@@ -6,13 +6,26 @@ import { api } from "~/utils/api";
 
 import "~/styles/globals.css";
 
+import Head from "next/head";
+import SideNav from "~/components/SideNav";
+
 const MyApp: AppType<{ session: Session | null }> = ({
   Component,
   pageProps: { session, ...pageProps },
 }) => {
   return (
     <SessionProvider session={session}>
-      <Component {...pageProps} />
+      <Head>
+        <title>Twitter Clone</title>
+        <meta name="decription" content="This is a twitter clone" />
+        <link rel="icon" href="/favicon.ico" />
+      </Head>
+      <div className="mx-auto flex max-w-screen-2xl border-2 border-red-500 sm:pr-4">
+        <SideNav />
+        <div className="min-h-screen flex-grow border-x border-blue-500">
+          <Component {...pageProps} />
+        </div>
+      </div>
     </SessionProvider>
   );
 };
