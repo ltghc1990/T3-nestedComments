@@ -74,7 +74,7 @@ export const tweetRouter = createTRPCRouter({
       };
     }),
   create: protectedProcedure
-    .input(z.object({ content: z.string() }))
+    .input(z.object({ content: z.string().min(1) }))
     .mutation(async ({ input: { content }, ctx }) => {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment
       const tweet = await ctx.prisma.tweet.create({
@@ -83,5 +83,29 @@ export const tweetRouter = createTRPCRouter({
 
       // eslint-disable-next-line @typescript-eslint/no-unsafe-return
       return tweet;
+    }),
+
+  toggleLike: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      //
+      const data = { tweetId: input.id, userId: ctx.session.user.id };
+      const existingLike = await ctx.prisma.like.findUnique({
+        where: {
+          userId_tweetId: data,
+        },
+      });
+
+      if (existingLike == null) {
+        await ctx.prisma.like.create({ data });
+        return { addedLike: true };
+      } else {
+        await ctx.prisma.like.delete({
+          where: {
+            userId_tweetId: data,
+          },
+        });
+        return { addedLike: false };
+      }
     }),
 });
