@@ -3,13 +3,14 @@ import React, {
   useRef,
   useLayoutEffect,
   useCallback,
-  FormEvent,
+  type FormEvent,
 } from "react";
 import Button from "./Button";
 import { ProfileImage } from "./ProfileImage";
 import { useSession } from "next-auth/react";
 
 import { api } from "~/utils/api";
+
 function updateTextAreaSize(textArea?: HTMLTextAreaElement) {
   if (textArea == null) return;
 
@@ -18,6 +19,7 @@ function updateTextAreaSize(textArea?: HTMLTextAreaElement) {
 }
 
 function Form() {
+  const trpcUtils = api.useContext();
   const session = useSession();
   const [inputValue, setInputValue] = useState("");
   const textAreaRef = useRef<HTMLTextAreaElement>();
@@ -26,6 +28,7 @@ function Form() {
     updateTextAreaSize(textArea);
     textAreaRef.current = textArea;
   }, []);
+
   // the first render of our component is incorrect because of the ref
   useLayoutEffect(() => {
     updateTextAreaSize(textAreaRef.current);
@@ -38,9 +41,36 @@ function Form() {
     createTweet(
       { content: inputValue },
       {
-        onSuccess: (res) => {
+        onSuccess: (newTweet) => {
           setInputValue("");
+
+          if (session.status !== "authenticated") return;
           // take response and update local state
+          trpcUtils.tweet.infiniteFeed.setInfiniteData({}, (oldData) => {
+            if (oldData == null || oldData.pages[0] == null) return;
+
+            const newCacheTweet = {
+              ...newTweet,
+              likeCount: 0,
+              likedByMe: false,
+              user: {
+                id: session.data.user.id,
+                name: session.data.user.name,
+                image: session.data.user.image,
+              },
+            };
+
+            return {
+              ...oldData,
+              pages: [
+                {
+                  ...oldData.pages[0],
+                  tweets: [newCacheTweet, ...oldData.pages[0].tweets],
+                },
+                ...oldData.pages.slice(1),
+              ],
+            };
+          });
         },
       }
     );
