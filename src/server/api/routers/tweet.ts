@@ -1,18 +1,39 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-import { z } from "zod";
+
+import { type Prisma } from "@prisma/client";
+import type { inferAsyncReturnType } from "@trpc/server";
+import { ZodIntersection, z } from "zod";
 
 import {
   createTRPCRouter,
   publicProcedure,
   protectedProcedure,
+  type createTRPCContext,
 } from "~/server/api/trpc";
 
 export const tweetRouter = createTRPCRouter({
+  infiniteProfileFeed: publicProcedure
+    .input(
+      z.object({
+        userId: z.string(),
+        limit: z.number().optional(),
+        cursor: z.object({ id: z.string(), createdAt: z.date() }).optional(),
+      })
+    )
+    .query(async ({ input: { limit = 10, cursor, userId }, ctx }) => {
+      return await getInifiniteTweets({
+        limit,
+        cursor,
+        ctx,
+        whereClause: { userId },
+      });
+    }),
   infiniteFeed: publicProcedure
     .input(
       z.object({
+        onlyFollowing: z.boolean().optional(),
         limit: z.number().optional(),
         cursor: z
           .object({
@@ -22,57 +43,24 @@ export const tweetRouter = createTRPCRouter({
           .optional(),
       })
     )
-    .query(async ({ input: { limit = 10, cursor }, ctx }) => {
-      const currentUserId = ctx.session?.user.id;
-
-      // the cursor is a combination of id + created at because tweets can be created at the exact time.
-      const data = await ctx.prisma.tweet.findMany({
-        take: limit + 1,
-        cursor: cursor ? { createdAt_id: cursor } : undefined,
-        // order by creation time, and then ordering it by id, on the off chance that 2 tweets are created at the same time
-        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-        select: {
-          id: true,
-          content: true,
-          createdAt: true,
-          _count: { select: { likes: true } },
-          likes:
-            currentUserId == null
-              ? false
-              : { where: { userId: currentUserId } },
-          user: {
-            select: {
-              name: true,
-              id: true,
-              image: true,
-            },
-          },
-        },
-      });
-      let nextCursor: typeof cursor | undefined;
-      // if the limit is 10 and we fetch from data limit+1 that means there is more data to fetch
-      if (data.length > limit) {
-        const nextItem = data.pop();
-        // tweets is back to 10 and the 11th item becomes our cursor
-        if (nextItem != null) {
-          nextCursor = { id: nextItem.id, createdAt: nextItem.createdAt };
-        }
+    .query(
+      async ({ input: { limit = 10, cursor, onlyFollowing = false }, ctx }) => {
+        const currentUserId = ctx.session?.user.id;
+        return await getInifiniteTweets({
+          limit,
+          cursor,
+          ctx,
+          whereClause:
+            currentUserId == null || !onlyFollowing
+              ? undefined
+              : {
+                  user: {
+                    followers: { some: { id: currentUserId } },
+                  },
+                },
+        });
       }
-      // map the tweets so its easier to work with in the front end
-      return {
-        tweets: data.map((tweet) => {
-          return {
-            id: tweet.id,
-            content: tweet.content,
-            createdAt: tweet.createdAt,
-            likeCount: tweet._count.likes,
-            user: tweet.user,
-            likedByMe: tweet.likes?.length > 0,
-          };
-        }),
-        nextCursor,
-      };
-    }),
+    ),
   create: protectedProcedure
     .input(z.object({ content: z.string().min(1) }))
     .mutation(async ({ input: { content }, ctx }) => {
@@ -109,3 +97,70 @@ export const tweetRouter = createTRPCRouter({
       }
     }),
 });
+
+const getInifiniteTweets = async ({
+  whereClause,
+  ctx,
+  limit,
+  cursor,
+}: {
+  whereClause?: Prisma.TweetWhereInput;
+  limit: number;
+  cursor:
+    | {
+        id: string;
+        createdAt: Date;
+      }
+    | undefined;
+
+  ctx: inferAsyncReturnType<typeof createTRPCContext>;
+}) => {
+  const currentUserId = ctx.session?.user.id;
+
+  // the cursor is a combination of id + created at because tweets can be created at the exact time.
+  const data = await ctx.prisma.tweet.findMany({
+    take: limit + 1,
+    cursor: cursor ? { createdAt_id: cursor } : undefined,
+    // order by creation time, and then ordering it by id, on the off chance that 2 tweets are created at the same time
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    where: whereClause,
+    select: {
+      id: true,
+      content: true,
+      createdAt: true,
+      _count: { select: { likes: true } },
+      likes:
+        currentUserId == null ? false : { where: { userId: currentUserId } },
+      user: {
+        select: {
+          name: true,
+          id: true,
+          image: true,
+        },
+      },
+    },
+  });
+  let nextCursor: typeof cursor | undefined;
+  // if the limit is 10 and we fetch from data limit+1 that means there is more data to fetch
+  if (data.length > limit) {
+    const nextItem = data.pop();
+    // tweets is back to 10 and the 11th item becomes our cursor
+    if (nextItem != null) {
+      nextCursor = { id: nextItem.id, createdAt: nextItem.createdAt };
+    }
+  }
+  // map the tweets so its easier to work with in the front end
+  return {
+    tweets: data.map((tweet) => {
+      return {
+        id: tweet.id,
+        content: tweet.content,
+        createdAt: tweet.createdAt,
+        likeCount: tweet._count.likes,
+        user: tweet.user,
+        likedByMe: tweet.likes?.length > 0,
+      };
+    }),
+    nextCursor,
+  };
+};

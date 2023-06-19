@@ -8,6 +8,7 @@ import { useSession } from "next-auth/react";
 import IconHoverEffect from "./IconHoverEffect";
 
 import { api } from "~/utils/api";
+import LoadingSpinner from "./LoadingSpinner";
 
 type Tweet = {
   id: string;
@@ -21,7 +22,7 @@ type Tweet = {
 type InfiniteTweetListProps = {
   isLoading: boolean;
   isError: boolean;
-  hasMore: boolean;
+  hasMore: boolean | undefined;
   fetchNewTweets: () => Promise<unknown>;
   tweets?: Tweet[];
 };
@@ -35,10 +36,9 @@ const InfiniteTweetList = ({
 }: InfiniteTweetListProps) => {
   const bottemRef = useRef(null);
   const isInView = useInView(bottemRef);
-  console.log(bottemRef);
+
   useEffect(() => {
     // if in view call function
-    // consolelog the element
     if (isInView) {
       if (hasMore) {
         fetchNewTweets();
@@ -48,7 +48,7 @@ const InfiniteTweetList = ({
 
   // had to comment out the if statements as it was making the ref stay null....
 
-  // if (isLoading) return <h1>Loading...</h1>;
+  // if (isLoading) return <LoadingSpinner />;
   // if (isError) return <h1>Error...</h1>;
 
   // if (tweets == null || tweets.length === 0) {
@@ -57,11 +57,13 @@ const InfiniteTweetList = ({
 
   return (
     <div>
+      {isLoading && <LoadingSpinner />}
       {tweets &&
         tweets.map((tweet) => {
           return <TweetCard key={tweet.id} {...tweet} />;
         })}
-      <div ref={bottemRef}>bottem</div>
+
+      <div ref={bottemRef}></div>
     </div>
   );
 };
@@ -83,7 +85,7 @@ const TweetCard = ({
   const trpcUtils = api.useContext();
 
   const { mutate, isLoading, isError } = api.tweet.toggleLike.useMutation({
-    onSuccess: async ({ addedLike }) => {
+    onSuccess: ({ addedLike }) => {
       // await trpcUtils.tweet.infiniteFeed.invalidate();
       const updateData: Parameters<
         typeof trpcUtils.tweet.infiniteFeed.setInfiniteData
@@ -113,6 +115,14 @@ const TweetCard = ({
         };
       };
       trpcUtils.tweet.infiniteFeed.setInfiniteData({}, updateData);
+      trpcUtils.tweet.infiniteFeed.setInfiniteData(
+        { onlyFollowing: true },
+        updateData
+      );
+      trpcUtils.tweet.infiniteProfileFeed.setInfiniteData(
+        { userId: user.id },
+        updateData
+      );
     },
   });
 

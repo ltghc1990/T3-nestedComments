@@ -8,7 +8,7 @@ import { VscHome, VscAccount, VscSignOut, VscSignIn } from "react-icons/vsc";
 const SideNav = () => {
   const session = useSession();
 
-  const user = session.data?.user.id;
+  const user = session.data?.user;
   return (
     <nav className="px-2 py-4">
       <ul className="sticky top-0 flex flex-col items-start gap-2 whitespace-nowrap">
