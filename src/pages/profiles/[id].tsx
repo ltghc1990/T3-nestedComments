@@ -30,6 +30,24 @@ const ProfilePage: NextPage<InferGetStaticPropsType<typeof getStaticProps>> = ({
     }
   );
 
+  const trpcUtils = api.useContext();
+
+  const { mutate: toggleFollow, isLoading } =
+    api.profile.toggleFollow.useMutation({
+      onSuccess: (addedFollow) => {
+        trpcUtils.profile.getById.setData({ id }, (oldData) => {
+          if (oldData == null) return;
+
+          const countModifier = addedFollow ? 1 : -1;
+          return {
+            ...oldData,
+            isFollowing: addedFollow,
+            followersCount: oldData.followersCount + countModifier,
+          };
+        });
+      },
+    });
+
   if (profile == null || profile.name == null)
     return <ErrorPage statusCode={404} />;
   return (
@@ -56,8 +74,9 @@ const ProfilePage: NextPage<InferGetStaticPropsType<typeof getStaticProps>> = ({
         </div>
         <FollowButton
           isFollowing={profile.isFollowing}
+          isLoading={isLoading}
           userId={id}
-          onClick={() => null}
+          onClick={() => toggleFollow({ userId: id })}
         />
       </header>
       <main>
@@ -76,10 +95,12 @@ const ProfilePage: NextPage<InferGetStaticPropsType<typeof getStaticProps>> = ({
 const FollowButton = ({
   userId,
   isFollowing,
+  isLoading,
   onClick,
 }: {
   userId: string;
   isFollowing: boolean;
+  isLoading: boolean;
   onClick: () => void;
 }) => {
   const session = useSession();
@@ -88,7 +109,7 @@ const FollowButton = ({
     return null;
   }
   return (
-    <Button onClick={onClick} small gray={isFollowing}>
+    <Button onClick={onClick} small gray={isFollowing} disabled={isLoading}>
       {isFollowing ? "unFollow" : "follow"}
     </Button>
   );

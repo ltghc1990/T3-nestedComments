@@ -4,7 +4,7 @@
 
 import { type Prisma } from "@prisma/client";
 import type { inferAsyncReturnType } from "@trpc/server";
-import { ZodIntersection, z } from "zod";
+import { z } from "zod";
 
 import {
   createTRPCRouter,
@@ -68,6 +68,8 @@ export const tweetRouter = createTRPCRouter({
       const tweet = await ctx.prisma.tweet.create({
         data: { content, userId: ctx.session.user.id },
       });
+
+      void ctx.revalidateSSG?.(`/profiles/${ctx.session.user.id}`);
 
       // eslint-disable-next-line @typescript-eslint/no-unsafe-return
       return tweet;

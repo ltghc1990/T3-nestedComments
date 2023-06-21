@@ -33,5 +33,43 @@ export const profileRouter = createTRPCRouter({
         isFollowing: profile.followers.length > 0,
       };
     }),
-  toggleFollow: protectedProcedure,
+  toggleFollow: protectedProcedure
+    .input(z.object({ userId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const currentUserId = ctx.session.user.id;
+      // its strange because it looks like when i click follow it goes to that persons user object and inserts the follow..
+
+      // kind of hard to follow but here goes
+      // we click follow, that persons userid gets sent as input
+      // we go into that persons user object, and search for followers,
+      // if our current session is in followers that means it exist
+      const existingFollow = await ctx.prisma.user.findFirst({
+        where: { id: input.userId, followers: { some: { id: currentUserId } } },
+      });
+
+      let addedFollow;
+      if (existingFollow == null) {
+        // there is no followers table, instead theres a relation that references itself inside of user
+        // followers     User[]    @relation(name: "Followers")
+        // follows       User[]    @relation(name: "Followers")
+
+        await ctx.prisma.user.update({
+          where: { id: input.userId },
+          // use connect wich adds a row
+          data: { followers: { connect: { id: currentUserId } } },
+        });
+        addedFollow = true;
+      } else {
+        await ctx.prisma.user.update({
+          where: { id: input.userId },
+          // removes them from the follower list
+          data: { followers: { disconnect: { id: currentUserId } } },
+        });
+        addedFollow = false;
+      }
+
+      void ctx.revalidateSSG?.(`/profiles/${input.userId}`);
+      void ctx.revalidateSSG?.(`/profiles/${currentUserId}`);
+      return { addedFollow };
+    }),
 });
