@@ -34,7 +34,7 @@ const ProfilePage: NextPage<InferGetStaticPropsType<typeof getStaticProps>> = ({
 
   const { mutate: toggleFollow, isLoading } =
     api.profile.toggleFollow.useMutation({
-      onSuccess: (addedFollow) => {
+      onSuccess: ({ addedFollow }) => {
         trpcUtils.profile.getById.setData({ id }, (oldData) => {
           if (oldData == null) return;
 

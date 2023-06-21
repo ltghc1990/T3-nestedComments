@@ -41,7 +41,7 @@ const InfiniteTweetList = ({
     // if in view call function
     if (isInView) {
       if (hasMore) {
-        fetchNewTweets();
+        void fetchNewTweets();
       }
     }
   }, [isInView]);
