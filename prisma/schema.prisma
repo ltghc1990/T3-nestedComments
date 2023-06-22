@@ -79,8 +79,8 @@ model Tweet {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([userId])
   @@unique([createdAt, id])
+  @@index([userId])
 }
 
 // if the user ever gets deleted it'll casecade and delete all Likes as well.
@@ -91,9 +91,8 @@ model Like {
   user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   tweet   Tweet  @relation(fields: [tweetId], references: [id], onDelete: Cascade)
 
-  //  both of the relations need their own indexes 
+   //  both of the relations need their own indexes 
   @@id([userId, tweetId])
   @@index([tweetId])
   @@index([userId])
 }
-
