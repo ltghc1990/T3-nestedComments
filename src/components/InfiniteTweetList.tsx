@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import { VscHeartFilled, VscHeart } from "react-icons/vsc";
 
 import { useInView } from "framer-motion";
@@ -44,7 +44,7 @@ const InfiniteTweetList = ({
         void fetchNewTweets();
       }
     }
-  }, [isInView]);
+  }, [isInView, fetchNewTweets, hasMore]);
 
   // had to comment out the if statements as it was making the ref stay null....
 
@@ -84,7 +84,7 @@ const TweetCard = ({
 }: Tweet) => {
   const trpcUtils = api.useContext();
 
-  const { mutate, isLoading, isError } = api.tweet.toggleLike.useMutation({
+  const { mutate, isLoading } = api.tweet.toggleLike.useMutation({
     onSuccess: ({ addedLike }) => {
       // await trpcUtils.tweet.infiniteFeed.invalidate();
       const updateData: Parameters<
